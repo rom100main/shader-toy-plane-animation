@@ -1,0 +1,237 @@
+
+struct Camera {
+    vec3 Obs;
+    vec3 View;
+    vec3 Up;
+    vec3 Horiz;
+    float H;
+    float W;
+    float z;
+};
+
+struct Ray {
+    vec3 Origin;
+    vec3 Dir;
+};
+
+Camera camera(in vec3 Obs, in vec3 LookAt, in float aperture) {
+    Camera C;
+    C.Obs = Obs;
+    C.View = normalize(LookAt - Obs);
+    C.Horiz = normalize(cross(vec3(0, 0, 1), C.View));
+    C.Up = normalize(cross(C.View, C.Horiz));
+    C.H = iResolution.y;
+    C.W = iResolution.x;
+    C.z = C.H/2.0/tan(aperture * 3.1415 / 180.0 /2.0);
+    return C;
+}
+
+Ray launch(in Camera C, in vec2 XY) {
+    Ray r;
+    r.Origin = C.Obs;
+    r.Dir = C.z*C.View + (XY.x - C.W/2.0)*C.Horiz + (XY.y - C.H/2.0)*C.Up;
+    return r;
+}
+
+float myNoise(vec2 p) {
+    return fract(sin(dot(p, vec2(-235.098, 486.4565)))*58345.7654);
+}
+
+float smoothNoise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = p - i;
+    f = f * f * (3.0 - 2.0 * f);
+    return mix(mix(myNoise(i+vec2(0, 0)), myNoise(i+vec2(1, 0)), f.x),
+           mix(myNoise(i+vec2(0, 1)), myNoise(i+vec2(1, 1)), f.x), f.y);
+}
+
+mat2 rot(float a) { float s = sin(a); float c = cos(a); return mat2(c, s, -s, c); }
+
+float waves(vec2 p) {
+    float t = iTime;
+    float a = 0.2;
+    float k = 0.5;
+    float om;
+    vec2 dir = vec2(1.0, 0.0);
+    dir = normalize(dir);
+
+    float h = 0.0;
+    for (int i = 0; i < 4; ++i) {
+        om = sqrt(k*9.81);
+        h += a*sin(k*dot(p, dir)+om*t+smoothNoise(vec2(p.x, p.y)));
+        k *= 2.;
+        a *= 0.5;
+    }
+    return h;
+}
+
+struct Sphere {
+    vec3 Center;
+    float R;
+    vec3 Color;
+};
+
+Sphere sphere1 = Sphere(vec3(0.5, 0.5, 0.5), 0.3, vec3(1.0, 0.3, 0.2));
+Sphere sphere2 = Sphere(vec3(0.0, 0.0, 0.0), 0.2, vec3(0.2, 0.8, 1.0)); // Position set in sdf based on time
+
+struct Cylinder {
+    vec3 Center;
+    float R;
+    vec3 Dir;
+    float L;
+    vec3 Color;
+};
+
+Cylinder cylinder1 = Cylinder(vec3(-0.5, 0.0, 0.0), 0.15, vec3(0.0, 0.0, 1.0), 1.0, vec3(0.8, 0.2, 0.8));
+
+struct Plan {
+    vec3 Origin;
+    vec3 Normal;
+    vec3 Color;
+};
+
+Plan ground = Plan(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.5, 0.5, 0.5));
+Plan plan_waves = Plan(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0, 1.0), vec3(0.5, 0.5, 1.0));
+
+float sdf_sphere(vec3 p, Sphere S, out vec3 col) {
+    col = S.Color;
+    return length(p - S.Center) - S.R;
+}
+
+float sdf_cylinder(vec3 p, Cylinder C, out vec3 col) {
+    col = C.Color;
+    vec3 v = p - C.Center;
+    vec2 d = abs(vec2(length(v.xz), v.y)) - vec2(C.R, C.L * 0.5);
+    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+}
+
+float sdf_plan(vec3 p, Plan P, out vec3 col) {
+    col = P.Color;
+    return dot(p - P.Origin, P.Normal);
+}
+
+float sdf_wave(vec3 p, Plan P, out vec3 col) {
+    col = P.Color;
+    float waveHeight = waves(p.xz);
+    return dot(p - P.Origin + vec3(0.0, 0.0, waveHeight), P.Normal);
+}
+
+float sdf(vec3 p, out vec3 color) {
+    float dists[5];
+    vec3 colors[5];
+
+    dists[0] = sdf_sphere(p, sphere1, colors[0]);
+    dists[1] = sdf_sphere(p, sphere2, colors[1]);
+    dists[2] = sdf_plan(p, ground, colors[2]);
+    dists[3] = sdf_cylinder(p, cylinder1, colors[3]);
+    dists[4] = 99.9; //sdf_wave(p, plan_waves, colors[4]);
+
+    float minDist = dists[0];
+    color = colors[0];
+    for (int i = 1; i < 5; i++) {
+        if (dists[i] < minDist) {
+            minDist = dists[i];
+            color = colors[i];
+        }
+    }
+    return minDist;
+}
+
+vec3 normal(vec3 p) {
+    float eps = 0.001;
+    vec3 n;
+    vec3 color; // dummy variable
+    n.x = sdf(p + vec3(eps, 0.0, 0.0), color) - sdf(p - vec3(eps, 0.0, 0.0), color);
+    n.y = sdf(p + vec3(0.0, eps, 0.0), color) - sdf(p - vec3(0.0, eps, 0.0), color);
+    n.z = sdf(p + vec3(0.0, 0.0, eps), color) - sdf(p - vec3(0.0, 0.0, eps), color);
+    return normalize(n);
+}
+
+float shadow(vec3 p, vec3 lightDir) {
+    float t = 0.01;
+    const int MAX_STEPS = 50;
+    const float EPS = 0.001;
+    float lightDist = length(lightDir);
+    vec3 ld = normalize(lightDir);
+
+    float shadow = 1.0;
+
+    for (int i = 0; i < MAX_STEPS; i++) {
+        vec3 pos = p + ld * t;
+        vec3 dummy;
+        float d = sdf(pos, dummy);
+        if (d < EPS) return 0.0;
+        shadow = min(shadow, 10.0 * d / t);
+        t += d;
+        if (t > lightDist) break;
+    }
+    return clamp(shadow, 0.0, 1.0);
+}
+
+bool find_intersection(Ray r, out vec3 intersec, inout vec3 col_intersec) {
+    // Ray-marching using the unified SDF function
+    vec3 ro = r.Origin;
+    vec3 rd = normalize(r.Dir);
+
+    float t = 0.0;
+    const int MAX_STEPS = 100;
+    const float EPS = 0.001;
+    const float MAX_DIST = 100.0;
+
+    for (int i = 0; i < MAX_STEPS; i++) {
+        vec3 p = ro + rd * t;
+        float d = sdf(p, col_intersec);
+        if (d < EPS) {
+            // hit
+            intersec = p;
+            // simple shading
+            vec3 n = normal(p);
+            vec3 lightPos = vec3(2.0, 2.0, 4.0);
+            vec3 lightDir = lightPos - p;
+            float lightDist = length(lightDir);
+            vec3 ld = normalize(lightDir);
+            float diff = max(dot(n, ld), 0.0);
+            float ambient = 0.15;
+            float sh = shadow(p, lightDir);
+            vec3 baseColor = col_intersec;
+            col_intersec = baseColor * (ambient + 0.85 * diff * sh);
+            return true;
+        }
+        if (t > MAX_DIST) break;
+        t += d;
+    }
+
+    return false;
+}
+
+vec3 render(Ray r) {
+    vec3 intersec;
+    vec3 col_intersec;
+    if (find_intersection(r, intersec, col_intersec)) {
+        return col_intersec;
+    }
+    return vec3(0.0, 0.1, 1.0); // Background color
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+    Camera C = camera(
+        vec3(0.0, 2.0, 2.0),
+        vec3(0.0, 0.0, 0.5),
+        50.0
+    );
+
+    float orbitRadius = 0.8;
+    float angle = iTime;
+    sphere2.Center = vec3(
+        sphere1.Center.x + cos(angle) * orbitRadius,
+        sphere1.Center.y + sin(angle) * orbitRadius,
+        sphere1.Center.z
+    );
+
+    vec3 col = vec3(0, 0.3, 0.8);
+    Ray r = launch(C, fragCoord);
+
+    col = render(r);
+
+    fragColor = vec4(col, 1.0);
+}
