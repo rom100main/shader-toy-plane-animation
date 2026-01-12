@@ -96,15 +96,15 @@ float sdEllipsoid(vec3 p, vec3 r) {
 // --- Scene Logic ---
 vec3 getPlanePos() {
     float x = 0.0;
-    
+
     // Keyboard Control Logic (Stateless)
     // We check if keys are pressed to offset position momentarily
     float kLeft = getKey(KEY_LEFT);
     float kRight = getKey(KEY_RIGHT);
-    
+
     if (kLeft > 0.5) x -= 3.0;
     if (kRight > 0.5) x += 3.0;
-    
+
     // Fallback: Sine wave if no input
     if (kLeft < 0.5 && kRight < 0.5) {
         x = sin(iTime) * 3.0;
@@ -122,59 +122,59 @@ float getWorldZ() {
 vec2 map(vec3 p) {
     vec2 res = vec2(MAX_DIST, MAT_NONE);
     float zScroll = getWorldZ();
-    
+
     // --- 1. The Red Plane (Player) ---
     // Positioned relative to camera/origin, does not scroll with world
     vec3 planePos = getPlanePos();
     vec3 pPlane = p - planePos;
-    
+
     // Bank angle based on position (fake physics)
     float bank = -planePos.x * 0.1;
     pPlane.xy *= rot(bank);
     pPlane.yz *= rot(0.1); // Slight pitch up
-    
+
     // Body
     float dBody = sdBox(pPlane, vec3(0.3, 0.3, 1.0));
     // Wings
     float dWings = sdBox(pPlane - vec3(0.0, 0.0, 0.2), vec3(1.8, 0.05, 0.4));
     float dPlane = smin(dBody, dWings, 0.1);
-    
+
     // Cockpit (Blue)
     float dCockpit = sdBox(pPlane - vec3(0.0, 0.3, 0.3), vec3(0.25, 0.15, 0.4));
-    
+
     // Combine Plane Parts
     if (dCockpit < dPlane) {
         if (dCockpit < res.x) res = vec2(dCockpit, MAT_PLANE_COCKPIT);
     } else {
         if (dPlane < res.x) res = vec2(dPlane, MAT_PLANE_RED);
     }
-    
+
     // --- World Objects (Scroll with zScroll) ---
     vec3 pWorld = p;
     pWorld.z += zScroll; // Move world towards camera
-    
+
     // --- 2. Water Surface (Plan with Noise) ---
     float waveH = noise(pWorld.xz * 0.2 + iTime * 0.5) * 0.5 + sin(pWorld.z * 0.5 + iTime)*0.2;
     float dWater = pWorld.y - waveH;
     if (dWater < res.x) res = vec2(dWater, MAT_WATER);
-    
+
     // --- 3. Lighthouse (Cylinders) ---
     // Repeat every 60 units in Z
     vec3 pLh = pWorld;
     float lhZ = mod(pLh.z + 30.0, 60.0) - 30.0;
     vec3 lhPos = vec3(pLh.x - 6.0, pLh.y, lhZ); // Left side
-    
+
     // Island Base
     float dIsland = sdCylinder(lhPos - vec3(0.0, -1.0, 0.0), 2.0, 2.0);
     // Tower
     float dTower = sdCylinder(lhPos - vec3(0.0, 2.0, 0.0), 3.0, 0.6);
     // Light Room (Yellow)
     float dLightRoom = sdCylinder(lhPos - vec3(0.0, 5.0, 0.0), 0.5, 0.7);
-    
+
     float dLighthouse = smin(dIsland, dTower, 0.1);
     if (dLighthouse < res.x) res = vec2(dLighthouse, MAT_LH_BASE);
     if (dLightRoom < res.x) res = vec2(dLightRoom, MAT_LH_LIGHT);
-    
+
     // --- 4. Buildings (Repeating Boxes) ---
     vec3 pBuild = pWorld;
     float bZ = mod(pBuild.z, 30.0) - 15.0;
@@ -182,14 +182,14 @@ vec2 map(vec3 p) {
     // Different heights based on ID? simplified
     float dBuild = sdBox(bPos - vec3(0.0, 1.0, 0.0), vec3(1.5, 3.0, 1.5));
     if (dBuild < res.x) res = vec2(dBuild, MAT_BUILDING);
-    
+
     // --- 5. Articulated Bird ---
     // Flies across
     vec3 pBird = pWorld;
     pBird.z = mod(pBird.z + 15.0, 40.0) - 20.0;
-    pBird.x += sin(iTime)*5.0; 
+    pBird.x += sin(iTime)*5.0;
     pBird.y -= 5.0; // Higher up
-    
+
     // Body
     float dBirdBody = sdEllipsoid(pBird, vec3(0.15, 0.1, 0.4));
     // Wings (Flapping)
@@ -198,23 +198,23 @@ vec2 map(vec3 p) {
     pWing.x = abs(pWing.x) - 0.1; // Symmetry
     pWing.xy *= rot(wingCycle * 0.5);
     float dBirdWing = sdEllipsoid(pWing - vec3(0.4, 0.0, 0.0), vec3(0.5, 0.05, 0.2));
-    
+
     float dBird = smin(dBirdBody, dBirdWing, 0.05);
     if (dBird < res.x) res = vec2(dBird, MAT_BIRD);
-    
+
     // --- 6. Disc (Non-aligned, cutting water) ---
     // Placed once every 100 units
     vec3 pDisc = pWorld;
     float discZ = mod(pDisc.z + 50.0, 100.0) - 50.0;
     vec3 discPos = vec3(pDisc.x + 3.0, pDisc.y, discZ);
-    
+
     // Rotate disc to be non-aligned
-    discPos.yz *= rot(0.5); 
+    discPos.yz *= rot(0.5);
     discPos.xy *= rot(0.5);
-    
+
     // A thin cylinder approximates a 2D disc
-    float dDisc = sdCylinder(discPos, 0.02, 2.0); 
-    
+    float dDisc = sdCylinder(discPos, 0.02, 2.0);
+
     if (dDisc < res.x) res = vec2(dDisc, MAT_DISC);
 
     return res;
@@ -249,36 +249,31 @@ vec3 getLight(vec3 p, vec3 n, vec3 rd, float matID) {
     // Day/Night Cycle
     float cycle = iTime * 0.3;
     float dayFactor = 0.5 + 0.5*sin(cycle);
-    
+
     // Sun/Moon Position
     vec3 sunDir = normalize(vec3(sin(cycle), cos(cycle) + 0.2, -0.5));
     vec3 sunCol = vec3(1.0, 0.95, 0.8);
     vec3 moonCol = vec3(0.1, 0.1, 0.2);
     vec3 lightCol = mix(moonCol, sunCol, dayFactor);
     vec3 lightDir = sunDir;
-    
+
     // Ambient
     vec3 ambient = vec3(0.1) * max(dayFactor, 0.2);
-    
+
     // Diffuse
     float diff = max(dot(n, lightDir), 0.0);
-    
+
     // Shadow
     float shadow = softShadow(p + n*0.02, lightDir, 0.05, 20.0, 8.0);
     diff *= shadow;
-    
+
     // Specular
     vec3 ref = reflect(rd, n);
     float spec = pow(max(dot(ref, lightDir), 0.0), 16.0);
-    
-    // Lighthouse Point Light (Yellow) - always on or night only
-    vec3 lhLightPos = vec3(-6.0, 5.0, mod(p.z + getWorldZ() + 30.0, 60.0) - 30.0 - (p.z + getWorldZ())); 
-    // This logic is tricky because of modulo repetition in map vs world space. 
-    // Approximation: Local lighting effect is hard with modulo unless we reconstruct the instance position.
-    // Let's simpler add a yellow tint if near the lighthouse material.
-    
+
+    // Lighthouse Point Light (Yellow) - always on at night
     vec3 col = vec3(0.0);
-    
+
     // Material Colors
     if (matID == MAT_PLANE_RED) col = vec3(0.8, 0.1, 0.1);
     else if (matID == MAT_PLANE_COCKPIT) {
@@ -293,99 +288,111 @@ vec3 getLight(vec3 p, vec3 n, vec3 rd, float matID) {
     else if (matID == MAT_BIRD) col = vec3(0.9);
     else if (matID == MAT_LH_BASE) col = vec3(0.7); // Gray
     else if (matID == MAT_LH_LIGHT) {
-        col = vec3(1.0, 1.0, 0.0); // Yellow emission
-        return col * 2.0; // Bright
+        if (dayFactor > 0.3) {
+            // Day: Light Blue, Transparent-ish
+            col = vec3(0.6, 0.8, 1.0);
+            spec *= 5.0; // Very Shiny glass
+        } else {
+            // Night: Yellow emission
+            col = vec3(1.0, 1.0, 0.0);
+            return col * 3.0; // Bright Emissive, ignores shading
+        }
     }
     else if (matID == MAT_BUILDING) col = vec3(0.4, 0.3, 0.3);
     else if (matID == MAT_DISC) {
         col = vec3(0.8, 0.4, 0.0); // Orange/Copper
         spec *= 2.0;
     }
-    
+
     // Combine
     vec3 lin = ambient + lightCol * diff;
-    
+
     // Additional Point Light from Lighthouse (Night only)
     if (dayFactor < 0.3) {
         // Calculate nearest lighthouse position in camera space
         float worldZ = p.z + getWorldZ();
         float lhPeriod = 60.0;
         float lhInstanceZ = floor((worldZ + lhPeriod * 0.5) / lhPeriod) * lhPeriod;
-        vec3 lhPos = vec3(-6.0, 5.0, lhInstanceZ - getWorldZ());
-        
+        vec3 lhPos = vec3(6.0, 5.0, lhInstanceZ - getWorldZ());
+
         vec3 ld = lhPos - p;
         float distSq = dot(ld, ld);
         float att = 1.0 / (1.0 + distSq * 0.05);
-        
-        if (att > 0.01) {
-            ld = normalize(ld);
-            float diffPt = max(dot(n, ld), 0.0);
-            lin += vec3(1.0, 0.8, 0.2) * diffPt * att * 5.0; // Strong yellow light
+
+        if (att > 0.001) {
+            vec3 ldN = normalize(ld);
+            float diffPt = max(dot(n, ldN), 0.0);
+
+            // Specular from Point Light
+            vec3 ref = reflect(rd, n);
+            float specPt = pow(max(dot(ref, ldN), 0.0), 16.0);
+
+            lin += vec3(1.0, 0.8, 0.2) * (diffPt * 5.0 + specPt * 2.0) * att;
         }
     }
-    
+
     col = col * lin + spec * lightCol * 0.5;
-    
+
     return col;
 }
 
 // --- Main Render Loop ---
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = (fragCoord - 0.5*iResolution.xy)/iResolution.y;
-    
+
     // Camera Setup (Follow Plane)
     vec3 planeP = getPlanePos();
     vec3 ro = vec3(planeP.x, 15.0, planeP.z - 8.0); // High up, behind
     vec3 lookAt = planeP + vec3(0.0, 0.0, 5.0); // Look ahead of plane
-    
+
     // Camera Matrix
     vec3 f = normalize(lookAt - ro);
     vec3 r = normalize(cross(vec3(0,1,0), f));
     vec3 u = cross(f, r);
     vec3 rd = normalize(f + uv.x*r + uv.y*u);
-    
+
     // Background (Sky)
     float cycle = iTime * 0.3;
     float dayFactor = 0.5 + 0.5*sin(cycle);
     vec3 col = mix(vec3(0.05, 0.05, 0.1), vec3(0.5, 0.7, 0.9), dayFactor);
     col = mix(col, vec3(0.8, 0.4, 0.2), clamp(1.0 - abs(rd.y)*2.0, 0.0, 1.0) * dayFactor); // Horizon
-    
+
     // Raymarching
     float t = 0.0;
     float id = MAT_NONE;
     bool hit = false;
-    
+
     for(int i=0; i<MAX_STEPS; i++) {
         vec3 p = ro + rd * t;
         vec2 d = map(p);
-        
+
         if(d.x < SURF_DIST) {
             hit = true;
             id = d.y;
             // Transparency trick for cockpit
             if (id == MAT_PLANE_COCKPIT) {
-                // Compute cockpit color and mix? 
+                // Compute cockpit color and mix?
                 // For now, render it as solid but let's add alpha blending accumulation if we were advanced.
                 // Simpler: Just render it.
             }
             break;
         }
-        
+
         t += d.x;
         if(t > MAX_DIST) break;
     }
-    
+
     if(hit) {
         vec3 p = ro + rd * t;
         vec3 n = calcNormal(p);
         vec3 objCol = getLight(p, n, rd, id);
-        
+
         // Reflection for Water (Requirement 5)
         if (id == MAT_WATER) {
             // Simple reflection: bounce ray once
             vec3 refDir = reflect(rd, n);
             vec3 refCol = mix(vec3(0.05, 0.05, 0.1), vec3(0.5, 0.7, 0.9), dayFactor); // Sky reflection default
-            
+
             // Quick march for reflection (limited steps)
             float tRef = 0.1;
             bool hitRef = false;
@@ -403,25 +410,25 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
                 tRef += dRef.x;
                 if(tRef > 50.0) break;
             }
-            
+
             // Fresnel mixing: "mi-bleu et mi-mirroir"
             float fresnel = pow(1.0 - max(dot(n, -rd), 0.0), 3.0);
             objCol = mix(objCol, refCol, 0.5 + 0.4 * fresnel);
         }
-        
-        // Transparent Cockpit effect (fake)
-        if (id == MAT_PLANE_COCKPIT) {
-            objCol = mix(objCol, col, 0.3); // Mix with sky/bg a bit
+
+        // Transparent Cockpit & Lighthouse Top (Day)
+        if (id == MAT_PLANE_COCKPIT || (id == MAT_LH_LIGHT && dayFactor > 0.3)) {
+            objCol = mix(objCol, col, 0.4); // Mix with sky/bg a bit
         }
-        
+
         col = objCol;
-        
+
         // Fog
         col = mix(col, mix(vec3(0.05, 0.05, 0.1), vec3(0.5, 0.7, 0.9), dayFactor), 1.0 - exp(-0.02 * t));
     }
-    
+
     // Tone mapping
     col = pow(col, vec3(0.4545));
-    
+
     fragColor = vec4(col, 1.0);
 }
