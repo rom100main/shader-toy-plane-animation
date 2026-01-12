@@ -24,7 +24,7 @@
 #define MAT_LH_BASE 5.0
 #define MAT_LH_LIGHT 6.0
 #define MAT_BUILDING 7.0
-#define MAT_PLATFORM 8.0
+#define MAT_DISC 8.0
 
 // Input helpers
 // Assuming standard keyboard mapping if available.
@@ -105,13 +105,8 @@ vec3 getPlanePos() {
     if (kLeft > 0.5) x -= 3.0;
     if (kRight > 0.5) x += 3.0;
     
-    // Fallback: Mouse Control if clicked
-    if (iMouse.z > 0.0) {
-        x = (iMouse.x / iResolution.x - 0.5) * 10.0;
-    }
-    
     // Fallback: Sine wave if no input
-    if (kLeft < 0.5 && kRight < 0.5 && iMouse.z <= 0.0) {
+    if (kLeft < 0.5 && kRight < 0.5) {
         x = sin(iTime) * 3.0;
     }
 
@@ -207,20 +202,20 @@ vec2 map(vec3 p) {
     float dBird = smin(dBirdBody, dBirdWing, 0.05);
     if (dBird < res.x) res = vec2(dBird, MAT_BIRD);
     
-    // --- 6. Platform with Hole (Disc cutout) ---
+    // --- 6. Disc (Non-aligned, cutting water) ---
     // Placed once every 100 units
-    vec3 pPlat = pWorld;
-    float platZ = mod(pPlat.z + 50.0, 100.0) - 50.0;
-    vec3 platPos = vec3(pPlat.x + 3.0, pPlat.y, platZ);
+    vec3 pDisc = pWorld;
+    float discZ = mod(pDisc.z + 50.0, 100.0) - 50.0;
+    vec3 discPos = vec3(pDisc.x + 3.0, pDisc.y, discZ);
     
-    // Rotate platform to satisfy "non-aligned with axes" requirement
-    platPos.xz *= rot(0.6); 
+    // Rotate disc to be non-aligned
+    discPos.yz *= rot(0.5); 
+    discPos.xy *= rot(0.5);
     
-    float dPlatBase = sdBox(platPos - vec3(0.0, 0.5, 0.0), vec3(2.0, 0.2, 2.0));
-    float dHole = sdCylinder(platPos - vec3(0.0, 0.5, 0.0), 1.0, 1.2); // Hole radius 1.2
+    // A thin cylinder approximates a 2D disc
+    float dDisc = sdCylinder(discPos, 0.02, 2.0); 
     
-    float dPlatform = opSubtract(dHole, dPlatBase);
-    if (dPlatform < res.x) res = vec2(dPlatform, MAT_PLATFORM);
+    if (dDisc < res.x) res = vec2(dDisc, MAT_DISC);
 
     return res;
 }
@@ -302,7 +297,10 @@ vec3 getLight(vec3 p, vec3 n, vec3 rd, float matID) {
         return col * 2.0; // Bright
     }
     else if (matID == MAT_BUILDING) col = vec3(0.4, 0.3, 0.3);
-    else if (matID == MAT_PLATFORM) col = vec3(0.5, 0.4, 0.2);
+    else if (matID == MAT_DISC) {
+        col = vec3(0.8, 0.4, 0.0); // Orange/Copper
+        spec *= 2.0;
+    }
     
     // Combine
     vec3 lin = ambient + lightCol * diff;
