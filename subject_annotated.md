@@ -1,7 +1,7 @@
 # Graphisme par ordinateur: Projet Personnel
 
 Description :
-Avion rouge vole au-dessus de l'eau avec des oiseaux qui apparraissent de temps en temps
+Avion rouge vole au-dessus de l'eau avec des oiseaux qui apparraissent de temps en temps et des batiments (les éléments traversent l'écran et se répète)
 Vu du dessus
 
 Avion rouge
@@ -29,7 +29,7 @@ refléxion sur l'eau (mi-bleu et mi-mirroir)
 oiseau blanche avec corps et 2 ailes
 
 7. un effet différent de ce qu'on a fait en cours (objets semi-transparens, matériau spéculaire, toonshading, soft shadow, intersection rayon-cône...)
-avion controlable avec le clavier
+avion controlable avec le clavier (flèche droite/gauche, il y a un max droite et un max gauche)
 cockpit un peu transparent
 
 Pensez à commenter le code et à écrire du code aussi clair que possible. Les images et schémas sont les bienvenus.
