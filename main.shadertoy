@@ -29,18 +29,6 @@
 #define MAT_BUILDING 7.0
 #define MAT_DISC 8.0
 
-// --- Structures ---
-struct Camera {
-    vec3 Obs;
-    vec3 Target;
-    float Zoom;
-};
-
-struct Ray {
-    vec3 Origin;
-    vec3 Dir;
-};
-
 // --- Utils ---
 mat2 rot(float a) {
     float s = sin(a), c = cos(a);
@@ -51,8 +39,6 @@ float smin(float a, float b, float k) {
     float h = clamp(0.5 + 0.5*(b-a)/k, 0.0, 1.0);
     return mix(b, a, h) - k*h*(1.0-h);
 }
-
-float opSubtract(float d1, float d2) { return max(-d1, d2); }
 
 // Noise for waves
 float hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -114,8 +100,7 @@ vec2 map(vec3 p) {
     vec3 planePos = getPlanePos();
     vec3 pPlane = p - planePos;
 
-    // Bank angle based on OSCILLATION, not offset position
-    // We recover the oscillation component by subtracting the buffer offset
+    // Bank angle based on OSCILLATION
     float bufferPos = texelFetch(iChannel0, ivec2(0,0), 0).x;
     float oscillation = planePos.x - bufferPos;
 
@@ -170,7 +155,6 @@ vec2 map(vec3 p) {
     vec3 pBuild = pWorld;
     float bZ = mod(pBuild.z, 30.0) - 15.0;
     vec3 bPos = vec3(pBuild.x + 8.0, pBuild.y, bZ);
-    // Different heights based on ID? simplified
     float dBuild = sdBox(bPos - vec3(0.0, 1.0, 0.0), vec3(1.5, 3.0, 1.5));
     if (dBuild < res.x) res = vec2(dBuild, MAT_BUILDING);
 
