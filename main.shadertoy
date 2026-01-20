@@ -1,13 +1,16 @@
 
 // Graphisme par ordinateur: Projet Personnel
-// Description : Avion rouge volant au-dessus de l'eau avec cycle jour/nuit, phare, oiseaux, et reflets.
+// Description : Avion rouge volant au-dessus de l'eau.
 // Instructions:
 // 1. Create a new shader on Shadertoy.com
-// 2. Paste this code into the Image tab.
-// 3. Select 'Keyboard' for iChannel0 (in the input tab below the code).
-//    - This enables Left/Right arrow control.
-//    - If no keyboard input is detected, the plane will sway automatically or follow the mouse.
-
+// 2. Add a 'Buffer A' tab (click the + sign at the top).
+// 3. Paste the code from 'bufferA.shadertoy' into the Buffer A tab.
+//    IMPORTANT SETTINGS FOR BUFFER A:
+//    - iChannel0: Select 'Keyboard' (found in Misc or Inputs).
+//    - iChannel1: Select 'Buffer A' (the buffer itself, for feedback).
+// 4. Paste THIS code into the Image tab.
+//    IMPORTANT SETTINGS FOR IMAGE:
+//    - iChannel0: Select 'Buffer A'.
 
 // --- Constants ---
 #define MAX_STEPS 100
@@ -25,17 +28,6 @@
 #define MAT_LH_LIGHT 6.0
 #define MAT_BUILDING 7.0
 #define MAT_DISC 8.0
-
-// Input helpers
-// Assuming standard keyboard mapping if available.
-// Left Arrow: 37, Right Arrow: 39
-const int KEY_LEFT = 37;
-const int KEY_RIGHT = 39;
-
-float getKey(int key) {
-    // Attempt to fetch from iChannel0 if it handles keyboard
-    return texelFetch(iChannel0, ivec2(key, 0), 0).x;
-}
 
 // --- Structures ---
 struct Camera {
@@ -95,20 +87,14 @@ float sdEllipsoid(vec3 p, vec3 r) {
 
 // --- Scene Logic ---
 vec3 getPlanePos() {
-    float x = 0.0;
+    // Read position from Buffer A (iChannel0)
+    float bufferPos = texelFetch(iChannel0, ivec2(0,0), 0).x;
 
-    // Keyboard Control Logic (Stateless)
-    // We check if keys are pressed to offset position momentarily
-    float kLeft = getKey(KEY_LEFT);
-    float kRight = getKey(KEY_RIGHT);
+    // Oscillation
+    float osc = sin(iTime) * 3.0;
 
-    if (kLeft > 0.5) x -= 3.0;
-    if (kRight > 0.5) x += 3.0;
-
-    // Fallback: Sine wave if no input
-    if (kLeft < 0.5 && kRight < 0.5) {
-        x = sin(iTime) * 3.0;
-    }
+    // "center" of the oscillation defined by the buffer position
+    float x = osc + bufferPos;
 
     return vec3(x, 4.0, 0.0); // y=4 (height), z=0 (plane is local 0, world moves)
 }
@@ -128,8 +114,13 @@ vec2 map(vec3 p) {
     vec3 planePos = getPlanePos();
     vec3 pPlane = p - planePos;
 
-    // Bank angle based on position (fake physics)
-    float bank = -planePos.x * 0.1;
+    // Bank angle based on OSCILLATION, not offset position
+    // We recover the oscillation component by subtracting the buffer offset
+    float bufferPos = texelFetch(iChannel0, ivec2(0,0), 0).x;
+    float oscillation = planePos.x - bufferPos;
+
+    float bank = -oscillation * 0.1;
+
     pPlane.xy *= rot(bank);
     pPlane.yz *= rot(0.1); // Slight pitch up
 

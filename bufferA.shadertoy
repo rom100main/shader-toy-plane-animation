@@ -1,0 +1,40 @@
+#define KEY_LEFT 37
+#define KEY_RIGHT 39
+#define SPEED 10.0
+#define LIMIT 8.0
+
+float getKey(sampler2D channel, int key) {
+    return texelFetch(channel, ivec2(key, 0), 0).x;
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
+    // Only calculate logic for the first pixel (0,0) to store state
+    if (fragCoord.x > 1.0 || fragCoord.y > 1.0) {
+        fragColor = vec4(0.0);
+        return;
+    }
+
+    // Read previous state from Channel 1 (Self - Buffer A)
+    // .x = Current Center Position
+    vec4 data = texelFetch(iChannel1, ivec2(0,0), 0);
+    float currentPos = data.x;
+    
+    // Read Input from Channel 0 (Keyboard)
+    float kLeft = getKey(iChannel0, KEY_LEFT);
+    float kRight = getKey(iChannel0, KEY_RIGHT);
+    
+    // Update Position (Continuous Movement)
+    // Integrate velocity: position += speed * dt
+    if (kLeft > 0.5) currentPos -= SPEED * iTimeDelta;
+    if (kRight > 0.5) currentPos += SPEED * iTimeDelta;
+    
+    // Clamp to screen/game bounds so the plane doesn't fly off forever
+    currentPos = clamp(currentPos, -LIMIT, LIMIT);
+    
+    // Initialization (first frame)
+    if (iFrame == 0) {
+        currentPos = 0.0;
+    }
+    
+    fragColor = vec4(currentPos, 0.0, 0.0, 1.0);
+}
