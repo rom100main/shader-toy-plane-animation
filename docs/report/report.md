@@ -1,7 +1,6 @@
 # Rapport de Projet - Graphisme par Ordinateur
 
 **Lien Shadertoy :** [Ajouter votre lien ici]
-**Lien GitHub :** [Ajouter votre lien ici]
 
 ## Description de la Scène
 
