@@ -1,0 +1,159 @@
+<svg
+    viewBox="0 0 500 250"
+    xmlns="http://www.w3.org/2000/svg"
+    style="background-color:#f9f9f9; border:1px solid #ccc;"
+>
+  <!-- Axes -->
+  <line x1="250" y1="20" x2="250" y2="230" stroke="#ddd" stroke-dasharray="4" />
+  <line x1="20" y1="125" x2="480" y2="125" stroke="#ddd" stroke-dasharray="4" />
+
+  <!-- Legend -->
+  <text
+        x="250"
+        y="30"
+        text-anchor="middle"
+        font-family="sans-serif"
+        font-size="14"
+        fill="#666"
+        font-weight="bold"
+    >Modèle Articulé (Oiseau)</text>
+
+  <!-- Transformations Group centered -->
+  <g transform="translate(250, 125)">
+
+    <!-- Body: sdEllipsoid(p, vec3(0.15, 0.1, 0.4))
+         Scale: 1 unit = 200px.
+         rx = 0.15*200 = 30
+         ry = 0.1*200 = 20
+    -->
+    <ellipse
+            cx="0"
+            cy="0"
+            rx="30"
+            ry="20"
+            fill="#eee"
+            stroke="#333"
+            stroke-width="2"
+        />
+    <text
+            x="0"
+            y="5"
+            text-anchor="middle"
+            font-family="sans-serif"
+            font-size="10"
+            fill="#333"
+        >Corps</text>
+    <text
+            x="0"
+            y="45"
+            text-anchor="middle"
+            font-family="sans-serif"
+            font-size="9"
+            fill="#555"
+        >p = (0,0)</text>
+
+    <!-- Wing Right Group
+         Pivot at x = 0.1 (20px)
+    -->
+    <g transform="translate(20, 0)">
+       <!-- Pivot Point Visual -->
+       <circle cx="0" cy="0" r="4" fill="#e74c3c" />
+
+       <!-- Rotation (Example angle -20 deg) -->
+       <g transform="rotate(-25)">
+           <!-- Wing Shape: sdEllipsoid(p - vec3(0.4,0,0), vec3(0.5, 0.05, 0.2))
+                Center at x=0.4 (80px)
+                Size rx=0.5 (100px), ry=0.05 (10px)
+           -->
+           <ellipse
+                    cx="80"
+                    cy="0"
+                    rx="100"
+                    ry="10"
+                    fill="#3498db"
+                    stroke="#2980b9"
+                    stroke-width="2"
+                    opacity="0.8"
+                />
+           <text
+                    x="80"
+                    y="4"
+                    text-anchor="middle"
+                    font-family="sans-serif"
+                    font-size="10"
+                    fill="white"
+                >Aile Droite</text>
+
+           <!-- Local Axis indicator -->
+           <line
+                    x1="0"
+                    y1="0"
+                    x2="180"
+                    y2="0"
+                    stroke="#e74c3c"
+                    stroke-width="1"
+                    stroke-dasharray="2"
+                />
+       </g>
+    </g>
+
+    <!-- Wing Left Group
+         Pivot at x = -0.1 (-20px)
+    -->
+    <g transform="translate(-20, 0)">
+       <circle cx="0" cy="0" r="4" fill="#e74c3c" />
+       <!-- Mirror rotation: 25 deg -->
+       <g transform="rotate(25)">
+           <!-- Visually mirror left -->
+           <ellipse
+                    cx="-80"
+                    cy="0"
+                    rx="100"
+                    ry="10"
+                    fill="#3498db"
+                    stroke="#2980b9"
+                    stroke-width="2"
+                    opacity="0.8"
+                />
+           <text
+                    x="-80"
+                    y="4"
+                    text-anchor="middle"
+                    font-family="sans-serif"
+                    font-size="10"
+                    fill="white"
+                >Aile Gauche</text>
+            <line
+                    x1="0"
+                    y1="0"
+                    x2="-180"
+                    y2="0"
+                    stroke="#e74c3c"
+                    stroke-width="1"
+                    stroke-dasharray="2"
+                />
+       </g>
+    </g>
+  </g>
+
+  <!-- Math logic -->
+  <rect
+        x="140"
+        y="210"
+        width="220"
+        height="30"
+        rx="5"
+        fill="#f0f0f0"
+        stroke="#ccc"
+    />
+  <text
+        x="250"
+        y="228"
+        text-anchor="middle"
+        font-family="monospace"
+        font-size="10"
+        fill="#444"
+    >
+    p.xy *= rot(sin(iTime*15.) * 0.5)
+  </text>
+</svg>

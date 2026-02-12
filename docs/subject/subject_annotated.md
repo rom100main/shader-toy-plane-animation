@@ -30,6 +30,5 @@ oiseau blanche avec corps et 2 ailes
 
 7. un effet différent de ce qu'on a fait en cours (objets semi-transparens, matériau spéculaire, toonshading, soft shadow, intersection rayon-cône...)
 avion controlable avec le clavier (flèche droite/gauche, il y a un max droite et un max gauche)
-cockpit un peu transparent
 
 Pensez à commenter le code et à écrire du code aussi clair que possible. Les images et schémas sont les bienvenus.
