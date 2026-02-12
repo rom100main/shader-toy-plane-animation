@@ -344,12 +344,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         if(d.x < SURF_DIST) {
             hit = true;
             id = d.y;
-            // Transparency trick for cockpit
-            if (id == MAT_PLANE_COCKPIT) {
-                // Compute cockpit color and mix?
-                // For now, render it as solid but let's add alpha blending accumulation if we were advanced.
-                // Simpler: Just render it.
-            }
+            // FIX: Transparency for now just simple color mixing
             break;
         }
 
