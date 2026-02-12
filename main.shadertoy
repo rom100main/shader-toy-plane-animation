@@ -82,7 +82,7 @@ vec3 getPlanePos() {
     // "center" of the oscillation defined by the buffer position
     float x = osc + bufferPos;
 
-    return vec3(x, 4.0, 0.0); // y=4 (height), z=0 (plane is local 0, world moves)
+    return vec3(x, 4.5, 0.0); // y=4.5 (height), z=0 (plane is local 0, world moves)
 }
 
 // The world moves towards -z to simulate forward flight
@@ -138,7 +138,7 @@ vec2 map(vec3 p) {
     // Repeat every 60 units in Z
     vec3 pLh = pWorld;
     float lhZ = mod(pLh.z + 30.0, 60.0) - 30.0;
-    vec3 lhPos = vec3(pLh.x - 6.0, pLh.y, lhZ); // Left side
+    vec3 lhPos = vec3(pLh.x - 11.0, pLh.y, lhZ); // Left side
 
     // Island Base
     float dIsland = sdCylinder(lhPos - vec3(0.0, -1.0, 0.0), 2.0, 2.0);
@@ -163,7 +163,7 @@ vec2 map(vec3 p) {
     vec3 pBird = pWorld;
     pBird.z = mod(pBird.z + 15.0, 40.0) - 20.0;
     pBird.x += sin(iTime)*5.0;
-    pBird.y -= 5.0; // Higher up
+    pBird.y -= 6.0; // Higher up
 
     // Body
     float dBirdBody = sdEllipsoid(pBird, vec3(0.15, 0.1, 0.4));
