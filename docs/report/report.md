@@ -49,12 +49,17 @@ L'oiseau blanc possède **2 articulations** :
 
 Les ailes oscillent sinusoïdalement avec une fréquence de 15 Hz pour simuler le battement des ailes.
 
-### 7. Effet supplémentaire - Contrôle clavier
+### 7. Effets supplémentaires
+
+#### Contrôle clavier
 L'avion est contrôlable avec le clavier (flèches gauche/droite) grâce à un Buffer A qui :
 - Lit l'état du clavier
 - Maintient la position horizontale de l'avion
 - Limite les déplacements entre -7 et +7 unités
 - Stocke l'état entre les frames via feedback buffer
+
+#### Soft shadows
+Des ombres douces (soft shadows) ont été implémentées pour des ombres plus réalistes. Cet effet est subtil mais visible notamment sur les ombres projetées par l'avion sur l'eau et ses ailes.
 
 ## Difficultés Rencontrées
 
