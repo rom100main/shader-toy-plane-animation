@@ -357,7 +357,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         vec3 n = calcNormal(p);
         vec3 objCol = getLight(p, n, rd, id);
 
-        // Reflection for Water (Requirement 5)
+        // Reflection for Water
         if (id == MAT_WATER) {
             // Simple reflection: bounce ray once
             vec3 refDir = reflect(rd, n);
