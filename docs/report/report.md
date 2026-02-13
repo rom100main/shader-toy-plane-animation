@@ -1,13 +1,14 @@
 # Rapport de Projet - Graphisme par Ordinateur
 
-**Lien Shadertoy :** [Ajouter votre lien ici]
+**[Lien Shadertoy](https://www.shadertoy.com/view/tX3fD2)**
 
 ## Description de la Scène
 
 La scène représente un **avion rouge volant au-dessus de l'eau**, avec une vue du dessus. L'environnement comprend :
 - Un avion rouge contrôlable (corps + ailes + cockpit bleu)
-- Une surface d'eau animée avec des vagues
+- Une surface d'eau animée avec des vagues avec reflet des éléments du décors et de l'avion
 - Des bâtiments qui défilent
+- Cycle jour/nuit
 - Un phare avec lumière jaune la nuit
 - Des oiseaux blancs qui volent avec battement d'ailes
 
@@ -35,7 +36,6 @@ Le phare est composé de trois cylindres empilés :
 ### 5. Miroir (plan)
 L'eau agit comme miroir avec :
 - Réflexion calculée par rayon réfléchi
-- Effet Fresnel : "mi-bleu et mi-miroir" selon l'angle de vue
 - Couleur de l'eau mélangée avec la réflexion du ciel et des objets
 
 ### 6. Objet articulé (Oiseau)
@@ -74,4 +74,5 @@ Après plusieurs essais et compréhension du mécanisme de feedback des buffers 
 
 ## Capture d'écran
 
-*[Screenshots à insérer ici]*
+![[screenshot_day_comp.avif]]
+![[screenshot_night_comp.avif]]
